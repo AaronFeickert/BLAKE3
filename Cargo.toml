@@ -48,8 +48,7 @@ mmap = ["std", "dep:memmap2"]
 # Implement the zeroize::Zeroize trait for types in this crate.
 zeroize = ["dep:zeroize", "arrayvec/zeroize"]
 
-# Enable the `ConstantTimeEq` trait for `Hash` using `subtle` functionality.
-subtle = ["dep:subtle"]
+# Enable constant-time traits for `Hash` using `subtle` functionality.
 
 # This crate implements traits from the RustCrypto project, exposed here as the
 # "traits-preview" feature. However, these traits aren't stable, and they're

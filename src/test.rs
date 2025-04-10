@@ -486,6 +486,32 @@ fn test_constanttimeeq() {
     assert_eq!(reference_hash(&[0]).ct_eq(&reference_hash(&[1])).unwrap_u8(), 0);
 }
 
+#[cfg(feature = "subtle")]
+#[test]
+fn test_ct_ordering() {
+    use subtle::{ConstantTimeGreater, ConstantTimeLess};
+    
+    // Test equality behavior
+    let hash = reference_hash(&[0]);
+    assert!(hash.0 == hash.0);
+    assert_eq!(hash.ct_gt(&hash).unwrap_u8(), 0);
+    assert_eq!(hash.ct_lt(&hash).unwrap_u8(), 0);
+
+    // Test less-than behavior
+    let l = reference_hash(&[0]);
+    let r = reference_hash(&[1]);
+    assert!(l.0 < r.0);
+    assert_eq!(l.ct_gt(&r).unwrap_u8(), 0);
+    assert_eq!(l.ct_lt(&r).unwrap_u8(), 1);
+
+    // Test greater-than behavior
+    let l = reference_hash(&[3]);
+    let r = reference_hash(&[4]);
+    assert!(l.0 > r.0);
+    assert_eq!(l.ct_gt(&r).unwrap_u8(), 1);
+    assert_eq!(l.ct_lt(&r).unwrap_u8(), 0);
+}
+
 #[test]
 fn test_compare_update_multiple() {
     // Don't use all the long test cases here, since that's unnecessarily slow

@@ -146,7 +146,7 @@ use core::cmp;
 use core::fmt;
 use platform::{Platform, MAX_SIMD_DEGREE, MAX_SIMD_DEGREE_OR_2};
 #[cfg(feature = "subtle")]
-use subtle::ConstantTimeEq;
+use subtle::{ConditionallySelectable, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -349,6 +349,25 @@ impl ConstantTimeEq for Hash {
         self.0.ct_eq(&other.0)
     }
 }
+
+#[cfg(feature = "subtle")]
+impl ConstantTimeGreater for Hash {
+    /// This ordering is [lexicographical](https://doc.rust-lang.org/std/cmp/trait.Ord.html#lexicographical-comparison).
+    fn ct_gt(&self, other: &Self) -> subtle::Choice {
+        let mut order = cmp::Ordering::Equal;
+        
+        // Iterate over all corresponding bytes, but only set a non-equal ordering on the first mismatch, since this determines the lexicographical ordering
+        for (l, r) in self.0.iter().zip(other.0.iter()) {
+            order.conditional_assign(&cmp::Ordering::Less, l.ct_lt(r) & order.ct_eq(&cmp::Ordering::Equal));
+            order.conditional_assign(&cmp::Ordering::Greater, l.ct_gt(r) & order.ct_eq(&cmp::Ordering::Equal));
+        }
+        
+        order.ct_eq(&cmp::Ordering::Greater)
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl ConstantTimeLess for Hash {}
 
 /// This implementation is constant-time.
 impl PartialEq for Hash {
